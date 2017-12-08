@@ -1,30 +1,34 @@
-import pymysql
-from flask import Flask, request, Response
+
+from flask import Flask,request,Response
 import json
+from sql import sql
 
-server = 'localhost'
-database = 'printer'
-user = 'root'
-
-# database connection
-conn = pymysql.connect(host = server, user = user, db = database)
-if (conn):
-    print('Connection to MySQL database', database, 'was successful!')
-cursor = conn.cursor()
-# cursor.execute('DESC job_history;')
-# row=cursor.fetchone()
-# while row:
-#     print(row)
-#     row=cursor.fetchone()
 app = Flask(__name__)
+
+sql=sql()
+
+
+@app.route('/')
+def blank():
+    return json.dumps({})
 
 @app.route('/get_jobs')
 def job_list():
-    cursor.execute('SELECT * FROM job_history;')
-    row=cursor.fetchone()
-    results=[]
-    while row:
-        results.append({'filename': row[1],
-                        'details': {'printer': row[0], 'starttime': row[2], 'endtime': row[3], 'status': row[4]}})
-        row=cursor.fetchone()
-    return json.dumps(results)
+    limit = request.args.get('limit', '')
+    if limit=='':
+        limit='20'
+    limit=int(limit)
+
+    results=sql.query()
+    if limit==0:
+        return json.dumps({})
+    if limit>len(results):
+        return json.dumps(results)
+
+    else:
+
+        return json.dumps(results[:limit])
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
